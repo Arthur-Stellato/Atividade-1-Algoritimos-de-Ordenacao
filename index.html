@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quick Sort — Visualizador &amp; Debugger</title>
+<style>
+  :root {
+    --bg: #12141c;
+    --panel: #1b1f2b;
+    --panel-alt: #262c3d;
+    --text: #e8e6e3;
+    --muted: #8b93a7;
+    --amber: #f2b84b;
+    --teal: #5fd4c4;
+    --rose: #ff6b7a;
+    --violet: #b98ce8;
+    --green: #6fcf97;
+    --border: #2a2f3f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 3rem;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    margin: 0 0 0.3rem;
+    letter-spacing: -0.01em;
+  }
+  header .subtitle {
+    color: var(--muted);
+    margin: 0 0 2rem;
+    font-size: 0.95rem;
+    max-width: 60ch;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  .bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 220px;
+    padding: 1.6rem 0.5rem 0;
+  }
+  .bar {
+    flex: 1;
+    background: #3b4256;
+    border-radius: 4px 4px 2px 2px;
+    position: relative;
+    min-height: 3px;
+    transition: height 0.25s ease, background-color 0.2s ease, transform 0.2s ease;
+  }
+  .bar.pivot { background: var(--violet); }
+  .bar.compare { background: var(--teal); }
+  .bar.swap { background: var(--rose); transform: translateY(-6px); }
+  .bar.sorted { background: var(--green); }
+  .bar .value {
+    position: absolute;
+    top: -1.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bar { transition: none; }
+  }
+
+  .legend {
+    display: flex;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+    margin: 1.1rem 0 0.9rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .chip::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .chip-pivot::before { background: var(--violet); }
+  .chip-compare::before { background: var(--teal); }
+  .chip-swap::before { background: var(--rose); }
+  .chip-sorted::before { background: var(--green); }
+
+  .step-desc {
+    min-height: 2.6em;
+    font-size: 0.95rem;
+    margin: 0.4rem 0 0.9rem;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+  }
+  button {
+    background: var(--panel-alt);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--amber); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+
+  .speed {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .array-size {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .array-size input[type="number"] {
+    width: 56px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 0.35rem 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .step-counter {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 0.9rem;
+  }
+
+  .custom-input {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1.1rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .custom-input input[type="text"] {
+    flex: 1;
+    min-width: 180px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+  }
+  .custom-error {
+    color: var(--rose);
+    font-size: 0.78rem;
+    margin: 0.4rem 0 0;
+    min-height: 1.2em;
+  }
+
+  .code-panel pre {
+    margin: 0;
+    overflow-x: auto;
+    max-height: 480px;
+    overflow-y: auto;
+  }
+  .code-panel code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+    line-height: 1.7;
+  }
+  .code-line {
+    display: block;
+    padding: 0 0.6rem;
+    border-left: 3px solid transparent;
+    white-space: pre;
+  }
+  .code-line.active {
+    background: rgba(242, 184, 75, 0.14);
+    border-left-color: var(--amber);
+  }
+  .line-num {
+    display: inline-block;
+    width: 2.1em;
+    color: var(--muted);
+    user-select: none;
+  }
+
+  .narrative {
+    margin-bottom: 1.5rem;
+  }
+  .narrative h2 {
+    font-size: 1.3rem;
+    margin: 0 0 0.9rem;
+    letter-spacing: -0.01em;
+  }
+  .narrative p {
+    color: var(--text);
+    max-width: 68ch;
+    line-height: 1.6;
+    margin: 0 0 1.1rem;
+  }
+  .step-num {
+    display: inline-block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    color: var(--amber);
+    margin-right: 0.6rem;
+    vertical-align: middle;
+  }
+  .steps {
+    margin: 0 0 0.4rem;
+    padding-left: 1.3rem;
+    max-width: 68ch;
+    line-height: 1.7;
+  }
+  .steps li { margin-bottom: 0.5rem; }
+  .steps li strong { color: var(--text); }
+  .curiosities {
+    margin: 0;
+    padding-left: 1.3rem;
+    max-width: 68ch;
+    line-height: 1.7;
+  }
+  .curiosities li { margin-bottom: 0.9rem; }
+  .curiosities code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--panel-alt);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+  .metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4rem;
+    margin-bottom: 1.1rem;
+  }
+  .metric {
+    border-left: 2px solid var(--border);
+    padding-left: 0.8rem;
+    min-width: 130px;
+  }
+  .metric .metric-label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-bottom: 0.15rem;
+  }
+  .metric .metric-value {
+    display: block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 1.05rem;
+  }
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  .compare-table th, .compare-table td {
+    text-align: left;
+    padding: 0.55rem 0.8rem 0.55rem 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .compare-table th {
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .compare-table td:first-child, .compare-table th:first-child {
+    color: var(--muted);
+    width: 26%;
+  }
+  .section-heading {
+    font-size: 1.15rem;
+    margin: 2.2rem 0 1rem;
+    letter-spacing: -0.01em;
+  }
+  @media (max-width: 600px) {
+    .compare-table { display: block; overflow-x: auto; }
+  }
+
+  footer {
+    margin-top: 2rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Quick Sort</h1>
+    <p class="subtitle">Site-apresentação do seminário de Algoritmos de Ordenação: conceito, complexidade, comparação com o Bubble Sort e uma demonstração interativa com debugger de passos.</p>
+  </header>
+
+  <section class="panel narrative">
+    <h2><span class="step-num">01</span>O que é o Quick Sort</h2>
+    <p>O Quick Sort é um algoritmo de ordenação por divisão e conquista: em vez de comparar tudo com tudo, ele escolhe um elemento como pivô, reorganiza o array para que os menores fiquem à esquerda e os maiores à direita, e repete o processo recursivamente em cada metade. É um dos algoritmos mais usados na prática, por ser rápido e ordenar o array no próprio lugar, sem precisar de memória extra proporcional ao tamanho da entrada.</p>
+  </section>
+
+  <section class="panel narrative">
+    <h2><span class="step-num">02</span>Como funciona, passo a passo</h2>
+    <ol class="steps">
+      <li><strong>Escolha do pivô</strong> — esta implementação usa sempre o último elemento da faixa como pivô (esquema de partição de Lomuto).</li>
+      <li><strong>Particionamento</strong> — o algoritmo percorre a faixa comparando cada elemento com o pivô: os menores vão para a esquerda, os demais permanecem à direita.</li>
+      <li><strong>Posicionamento do pivô</strong> — ao final da partição, o pivô é movido para a posição que já é definitiva no array ordenado.</li>
+      <li><strong>Recursão</strong> — o mesmo processo se repete, separadamente, na parte à esquerda e na parte à direita do pivô.</li>
+      <li><strong>Caso base</strong> — quando a faixa tem 0 ou 1 elemento, não há mais o que ordenar e a recursão para.</li>
+    </ol>
+  </section>
+
+  <section class="panel narrative">
+    <h2><span class="step-num">03</span>Análise de complexidade</h2>
+    <div class="metrics">
+      <div class="metric"><span class="metric-label">Melhor caso</span><span class="metric-value">O(n log n)</span></div>
+      <div class="metric"><span class="metric-label">Caso médio</span><span class="metric-value">O(n log n)</span></div>
+      <div class="metric"><span class="metric-label">Pior caso</span><span class="metric-value">O(n²)</span></div>
+      <div class="metric"><span class="metric-label">Espaço extra</span><span class="metric-value">O(log n)</span></div>
+      <div class="metric"><span class="metric-label">Estável</span><span class="metric-value">Não</span></div>
+      <div class="metric"><span class="metric-label">In-place</span><span class="metric-value">Sim</span></div>
+    </div>
+    <p>O pior caso acontece quando o pivô escolhido é sempre o menor ou o maior valor da faixa — por exemplo, um array já ordenado, já que aqui o pivô é o último elemento. Teste isso no campo de array customizado da demonstração: em vez de dividir o problema pela metade a cada chamada, o algoritmo passa a fazer só uma partição por vez, e a complexidade sobe para O(n²).</p>
+  </section>
+
+  <section class="panel narrative">
+    <h2><span class="step-num">04</span>Quick Sort vs. Bubble Sort</h2>
+    <p>Os dois são algoritmos de comparação e troca, mas resolvem o problema de formas bem diferentes. O Bubble Sort percorre o array repetidamente, trocando pares adjacentes fora de ordem, até não haver mais trocas a fazer. O Quick Sort particiona o problema em torno de um pivô e ordena cada metade recursivamente — por isso escala muito melhor conforme o array cresce.</p>
+    <table class="compare-table">
+      <thead>
+        <tr><th></th><th>Quick Sort</th><th>Bubble Sort</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Estratégia</td><td>Dividir para conquistar, particionando em torno de um pivô</td><td>Trocas sucessivas de elementos adjacentes, em passadas repetidas</td></tr>
+        <tr><td>Melhor caso</td><td>O(n log n)</td><td>O(n), com otimização de parada antecipada</td></tr>
+        <tr><td>Caso médio</td><td>O(n log n)</td><td>O(n²)</td></tr>
+        <tr><td>Pior caso</td><td>O(n²)</td><td>O(n²)</td></tr>
+        <tr><td>Espaço extra</td><td>O(log n) — pilha de recursão</td><td>O(1)</td></tr>
+        <tr><td>Estável</td><td>Não</td><td>Sim</td></tr>
+        <tr><td>Indicado para</td><td>Datasets grandes, uso geral</td><td>Fins didáticos, arrays pequenos ou quase ordenados</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel narrative">
+    <h2><span class="step-num">05</span>Curiosidades</h2>
+    <ul class="curiosities">
+      <li>O Quick Sort foi criado por Tony Hoare em 1959, quando ele precisava ordenar palavras para um projeto de tradução automática russo-inglês — muito antes de boa parte das estruturas de dados que hoje consideramos básicas existirem.</li>
+      <li>Mesmo com pior caso O(n²), o Quick Sort costuma ser mais rápido na prática do que algoritmos com pior caso garantido O(n log n), como o Merge Sort, graças ao baixo overhead de memória e ao bom uso de cache do processador.</li>
+      <li>Bibliotecas padrão de várias linguagens usam variações otimizadas dele: o <code>std::sort</code> do C++ costuma usar introsort (Quick Sort combinado com Heap Sort e Insertion Sort), e o Java usa uma versão de dois pivôs para ordenar tipos primitivos.</li>
+      <li>Nem todo mundo usa Quick Sort puro: o Python ordena listas com Timsort, um híbrido de Merge Sort e Insertion Sort, justamente para evitar o pior caso O(n²).</li>
+      <li>O pior caso não é só teórico: já foi explorado como ataque de negação de serviço contra sistemas que ordenavam dados enviados por usuários com um pivô previsível. Por isso, implementações reais costumam escolher o pivô aleatoriamente ou usar a mediana de três valores.</li>
+    </ul>
+  </section>
+
+  <h2 class="section-heading"><span class="step-num">06</span>Demonstração ao vivo</h2>
+
+  <div class="layout">
+    <section class="panel viz-panel">
+      <div class="bars" id="bars"></div>
+
+      <div class="legend">
+        <span class="chip chip-pivot">Pivô</span>
+        <span class="chip chip-compare">Comparando</span>
+        <span class="chip chip-swap">Trocando</span>
+        <span class="chip chip-sorted">Posição final</span>
+      </div>
+
+      <p class="step-desc" id="stepDesc">Carregando...</p>
+
+      <div class="controls">
+        <label class="array-size">
+          Tamanho
+          <input type="number" id="arrSize" min="2" max="15" value="10" aria-label="Tamanho do array" />
+        </label>
+        <button id="btnRandom" type="button">Gerar aleatório</button>
+        <button id="btnBack" type="button">◁ Voltar</button>
+        <button id="btnPlay" type="button">▷ Reproduzir</button>
+        <button id="btnNext" type="button">Avançar ▷</button>
+        <label class="speed">
+          Velocidade
+          <input type="range" id="speed" min="1" max="10" value="5" />
+        </label>
+      </div>
+
+      <p class="step-counter" id="stepCounter">Passo 0 / 0</p>
+
+      <div class="custom-input">
+        <input type="text" id="customArr" placeholder="Testar array específico, ex: 5, 3, 8, 1, 9" />
+        <button id="btnUseCustom" type="button">Usar este array</button>
+      </div>
+      <p class="custom-error" id="customError"></p>
+    </section>
+
+    <section class="panel code-panel">
+      <pre><code id="codeBlock"></code></pre>
+    </section>
+  </div>
+
+  <footer>Feito para a Atividade Avaliativa 1 — Algoritmos de Ordenação (Quick Sort, esquema de Lomuto).</footer>
+</div>
+
+<script>
+  const CPP_SOURCE = `#include <iostream>
+#include <vector>
+using namespace std;
+
+// Função de partição (esquema de Lomuto): reorganiza o vetor
+// usando o último elemento como pivô e devolve sua posição final.
+int partition(vector<int>& arr, int low, int high) {
+    int pivot = arr[high];
+    int i = low - 1;
+
+    for (int j = low; j < high; j++) {
+        if (arr[j] < pivot) {
+            i++;
+            swap(arr[i], arr[j]);
+        }
+    }
+
+    swap(arr[i + 1], arr[high]);
+    return i + 1;
+}
+
+// Função recursiva que ordena o vetor entre os índices low e high.
+void quickSort(vector<int>& arr, int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
+}
+
+int main() {
+    vector<int> arr = {10, 7, 8, 9, 1, 5};
+    int n = arr.size();
+
+    quickSort(arr, 0, n - 1);
+
+    cout << "Array ordenado: ";
+    for (int x : arr) cout << x << " ";
+    cout << endl;
+
+    return 0;
+}`;
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function renderCode() {
+    const lines = CPP_SOURCE.split("\n");
+    const codeBlock = document.getElementById("codeBlock");
+    codeBlock.innerHTML = lines
+      .map((line, idx) => {
+        const n = idx + 1;
+        return `<span class="code-line" data-line="${n}"><span class="line-num">${n}</span>${escapeHtml(line)}</span>`;
+      })
+      .join("\n");
+  }
+
+  // Gera a lista de passos executando o mesmo algoritmo do C++ acima,
+  // guardando em cada passo qual linha do código corresponde.
+  function buildSteps(initialArray) {
+    const steps = [];
+    const arr = initialArray.slice();
+    const sortedSet = new Set();
+
+    function snapshot(extra) {
+      steps.push(Object.assign({ array: arr.slice(), sortedIndices: Array.from(sortedSet) }, extra));
+    }
+
+    function partition(low, high) {
+      const pivot = arr[high];
+      snapshot({ line: 8, low, high, pivotIdx: high, desc: `Pivô escolhido: arr[${high}] = ${pivot}` });
+      let i = low - 1;
+      snapshot({ line: 9, low, high, pivotIdx: high, desc: `i inicializado em ${i} (uma posição antes do início da faixa)` });
+
+      for (let j = low; j < high; j++) {
+        snapshot({ line: 11, low, high, pivotIdx: high, compareIdx: [j], desc: `Avançando j para o índice ${j}` });
+        const cond = arr[j] < pivot;
+        snapshot({ line: 12, low, high, pivotIdx: high, compareIdx: [j, high], desc: `arr[${j}] = ${arr[j]} ${cond ? "<" : "≥"} pivô (${pivot})` });
+        if (cond) {
+          i++;
+          snapshot({ line: 13, low, high, pivotIdx: high, compareIdx: [j], desc: `Condição verdadeira → i++ (i = ${i})` });
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+          snapshot({ line: 14, low, high, pivotIdx: high, swapIdx: [i, j], desc: `Troca arr[${i}] ↔ arr[${j}]` });
+        }
+      }
+
+      [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+      snapshot({ line: 18, low, high, swapIdx: [i + 1, high], desc: `Pivô movido para sua posição final: índice ${i + 1}` });
+      sortedSet.add(i + 1);
+      snapshot({ line: 19, low, high, pivotIdx: i + 1, desc: `Partição concluída — pivô fixo no índice ${i + 1}` });
+      return i + 1;
+    }
+
+    function quickSort(low, high) {
+      snapshot({ line: 24, low, high, desc: `quickSort(low=${low}, high=${high})` });
+      if (low < high) {
+        const pi = partition(low, high);
+        snapshot({ line: 25, low, high, desc: `Partição retornou pi = ${pi}` });
+        snapshot({ line: 26, low, high, desc: `Chamada recursiva à esquerda: quickSort(${low}, ${pi - 1})` });
+        quickSort(low, pi - 1);
+        snapshot({ line: 27, low, high, desc: `Chamada recursiva à direita: quickSort(${pi + 1}, ${high})` });
+        quickSort(pi + 1, high);
+      } else if (low === high && low >= 0 && low < arr.length) {
+        sortedSet.add(low);
+        snapshot({ line: 24, low, high, desc: `Faixa de 1 elemento (índice ${low}) — condição falsa, caso base` });
+      }
+    }
+
+    snapshot({ line: null, desc: "Array inicial. Clique em reproduzir ou avance passo a passo." });
+    quickSort(0, arr.length - 1);
+    snapshot({ line: null, desc: "Array totalmente ordenado!" });
+    return steps;
+  }
+
+  // --- Estado e renderização ---
+  let steps = [];
+  let currentStep = 0;
+  let playing = false;
+  let timer = null;
+
+  const barsEl = document.getElementById("bars");
+  const stepDescEl = document.getElementById("stepDesc");
+  const stepCounterEl = document.getElementById("stepCounter");
+  const btnBack = document.getElementById("btnBack");
+  const btnNext = document.getElementById("btnNext");
+  const btnPlay = document.getElementById("btnPlay");
+  const arrSizeInput = document.getElementById("arrSize");
+  const btnRandom = document.getElementById("btnRandom");
+  const speedInput = document.getElementById("speed");
+  const customArrInput = document.getElementById("customArr");
+  const btnUseCustom = document.getElementById("btnUseCustom");
+  const customError = document.getElementById("customError");
+
+  function render(idx) {
+    const step = steps[idx];
+    const maxVal = Math.max(...step.array, 1);
+
+    barsEl.innerHTML = "";
+    step.array.forEach((val, i) => {
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      bar.style.height = `${(val / maxVal) * 100}%`;
+      if (step.sortedIndices && step.sortedIndices.includes(i)) bar.classList.add("sorted");
+      if (step.pivotIdx === i) bar.classList.add("pivot");
+      if (step.compareIdx && step.compareIdx.includes(i)) bar.classList.add("compare");
+      if (step.swapIdx && step.swapIdx.includes(i)) bar.classList.add("swap");
+
+      const label = document.createElement("span");
+      label.className = "value";
+      label.textContent = val;
+      bar.appendChild(label);
+      barsEl.appendChild(bar);
+    });
+
+    document.querySelectorAll(".code-line.active").forEach((el) => el.classList.remove("active"));
+    if (step.line) {
+      const lineEl = document.querySelector(`.code-line[data-line="${step.line}"]`);
+      if (lineEl) {
+        lineEl.classList.add("active");
+        lineEl.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
+    }
+
+    stepDescEl.textContent = step.desc;
+    stepCounterEl.textContent = `Passo ${idx + 1} / ${steps.length}`;
+    btnBack.disabled = idx === 0;
+    btnNext.disabled = idx === steps.length - 1;
+  }
+
+  function goTo(idx) {
+    currentStep = Math.max(0, Math.min(steps.length - 1, idx));
+    render(currentStep);
+  }
+
+  function stopPlay() {
+    playing = false;
+    btnPlay.textContent = "▷ Reproduzir";
+    clearInterval(timer);
+  }
+
+  function startPlay() {
+    if (currentStep >= steps.length - 1) currentStep = 0;
+    playing = true;
+    btnPlay.textContent = "❚❚ Pausar";
+    const delay = 1100 - Number(speedInput.value) * 100;
+    timer = setInterval(() => {
+      if (currentStep >= steps.length - 1) {
+        stopPlay();
+        return;
+      }
+      goTo(currentStep + 1);
+    }, delay);
+  }
+
+  function loadArray(arr) {
+    stopPlay();
+    steps = buildSteps(arr);
+    currentStep = 0;
+    render(0);
+  }
+
+  function randomArray(size) {
+    let n = parseInt(size, 10);
+    if (!Number.isInteger(n)) n = 10;
+    n = Math.max(2, Math.min(15, n));
+    return Array.from({ length: n }, () => 5 + Math.floor(Math.random() * 90));
+  }
+
+  function parseCustom(str) {
+    const parts = str.split(/[,\s]+/).filter(Boolean).map(Number);
+    if (parts.length < 2 || parts.length > 15) return null;
+    if (parts.some((n) => !Number.isInteger(n) || n < 1 || n > 99)) return null;
+    return parts;
+  }
+
+  btnNext.addEventListener("click", () => { stopPlay(); goTo(currentStep + 1); });
+  btnBack.addEventListener("click", () => { stopPlay(); goTo(currentStep - 1); });
+  btnPlay.addEventListener("click", () => (playing ? stopPlay() : startPlay()));
+  btnRandom.addEventListener("click", () => {
+    let n = parseInt(arrSizeInput.value, 10);
+    if (!Number.isInteger(n)) n = 10;
+    n = Math.max(2, Math.min(15, n));
+    arrSizeInput.value = n;
+    customArrInput.value = "";
+    customError.textContent = "";
+    loadArray(randomArray(n));
+  });
+  speedInput.addEventListener("input", () => {
+    if (playing) { stopPlay(); startPlay(); }
+  });
+  btnUseCustom.addEventListener("click", () => {
+    const parsed = parseCustom(customArrInput.value);
+    if (!parsed) {
+      customError.textContent = "Digite de 2 a 15 números inteiros entre 1 e 99, separados por vírgula.";
+      return;
+    }
+    customError.textContent = "";
+    loadArray(parsed);
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.code === "ArrowRight") { stopPlay(); goTo(currentStep + 1); }
+    if (e.code === "ArrowLeft") { stopPlay(); goTo(currentStep - 1); }
+    if (e.code === "Space") { e.preventDefault(); playing ? stopPlay() : startPlay(); }
+  });
+
+  renderCode();
+  loadArray(randomArray(arrSizeInput.value));
+</script>
+</body>
+</html>
