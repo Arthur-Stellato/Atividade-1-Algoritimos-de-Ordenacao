@@ -52,8 +52,11 @@ A explicação completa (passo a passo, curiosidades e comparação com o Bubble
 
 ## Equipe
 
-- (preencher com os nomes da equipe)
+- (Arthur Gabriel Teotônio Stellato, Conrado Henrique Lima Da Mata, João Felipe Aleixo de Melo, Reinan Cordeiro Morais, Luis)
 
 ## Atividade
 
-Atividade Avaliativa 1 — Algoritmos de Ordenação — UTFPR.
+Atividade Avaliativa 1 — Algoritmos de Ordenação — UTFPR. \
+Professor — CLAYTON KOSSOSKI — UTFPR 2026 \
+Turma — Análise de Sistemas 2026/2 \
+Matéria — Estratégias de Programação
