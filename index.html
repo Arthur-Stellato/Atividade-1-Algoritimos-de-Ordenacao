@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quick Sort — Apresentação</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --panel-alt: #f0eee8;
+    --text: #1e2230;
+    --muted: #666b7a;
+    --border: #e3e1da;
+    --amber: #b8720a;
+    --teal: #12857a;
+    --rose: #d6455d;
+    --violet: #7b4fc9;
+    --green: #2e9e63;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  .deck { position: relative; width: 100%; }
+
+  .slide {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    height: 100vh;
+    width: 100%;
+    padding: 3rem clamp(1.5rem, 6vw, 6rem);
+    overflow-y: auto;
+  }
+  .slide.active { display: flex; }
+
+  .slide h2 {
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    margin: 0 0 1.3rem;
+    letter-spacing: -0.01em;
+  }
+  .slide p { line-height: 1.6; max-width: 75ch; }
+
+  /* Capa */
+  .slide-cover { align-items: flex-start; justify-content: center; }
+  .cover-kicker { color: var(--muted); letter-spacing: 0.06em; margin: 0 0 0.4rem; font-size: 0.9rem; }
+  .cover-title { font-size: clamp(2.4rem, 6vw, 4rem); margin: 0 0 0.6rem; letter-spacing: -0.02em; }
+  .cover-subtitle { color: var(--muted); font-size: 1.1rem; margin: 0 0 2.2rem; }
+  .cover-meta { display: grid; grid-template-columns: repeat(2, minmax(200px, 1fr)); gap: 1.1rem 2.5rem; max-width: 900px; padding: 0; margin: 0; }
+  .cover-meta div { border-left: 2px solid var(--border); padding-left: 0.8rem; }
+  .cover-meta dt { color: var(--muted); font-size: 0.78rem; margin-bottom: 0.15rem; }
+  .cover-meta dd { margin: 0; font-size: 1rem; }
+  .placeholder { color: var(--amber); font-style: italic; }
+
+  /* Agenda */
+  .agenda { padding-left: 1.4rem; max-width: 60ch; line-height: 2; font-size: 1.05rem; }
+
+  /* Visão geral */
+  .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.4rem; margin-top: 1rem; }
+  .overview-grid h3 { font-size: 1rem; margin: 0 0 0.4rem; }
+  .overview-grid p { margin: 0; font-size: 0.92rem; }
+
+  /* Diagrama de particionamento */
+  .partition-diagram { display: flex; gap: 0.6rem; margin: 1.6rem 0; max-width: 720px; }
+  .diagram-box { flex: 1; padding: 1.4rem 0.8rem; text-align: center; border-radius: 8px; font-size: 0.9rem; font-weight: 600; color: #fff; }
+  .diagram-smaller { background: var(--teal); }
+  .diagram-pivot { background: var(--violet); flex: 0.6; }
+  .diagram-bigger { background: var(--rose); }
+
+  /* Passos numerados */
+  .steps { margin: 0 0 0.4rem; padding-left: 1.3rem; max-width: 68ch; line-height: 1.7; }
+  .steps li { margin-bottom: 0.5rem; }
+  .steps li strong { color: var(--text); }
+
+  /* Curiosidades (não usado nesta versão, mantido por compatibilidade) */
+  .curiosities { margin: 0; padding-left: 1.3rem; max-width: 68ch; line-height: 1.7; }
+  .curiosities li { margin-bottom: 0.9rem; }
+
+  /* Trecho de código estático (slide de passo a passo) */
+  .code-snippet { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.1rem; margin-top: 1.2rem; max-width: 640px; }
+  .code-snippet pre { margin: 0; overflow-x: auto; }
+  .code-snippet code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  .footnote-ref { color: var(--muted); font-size: 0.78rem; margin: 0.6rem 0 0; }
+
+  /* Tabelas de dados (exemplo prático, comparação) */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 0.8rem; }
+  .data-table th, .data-table td {
+    text-align: left;
+    padding: 0.5rem 0.8rem 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .data-table th { color: var(--muted); font-weight: 500; }
+  .data-table td:first-child, .data-table th:first-child { color: var(--muted); }
+  @media (max-width: 600px) { .data-table { display: block; overflow-x: auto; } }
+
+  /* Métricas de complexidade */
+  .metrics { display: flex; flex-wrap: wrap; gap: 1.4rem; margin: 1rem 0 1.2rem; }
+  .metric { border-left: 2px solid var(--border); padding-left: 0.8rem; min-width: 130px; }
+  .metric .metric-label { display: block; color: var(--muted); font-size: 0.78rem; margin-bottom: 0.15rem; }
+  .metric .metric-value {
+    display: block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 1.05rem;
+  }
+
+  /* Vantagens e desvantagens */
+  .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem; margin-top: 0.6rem; max-width: 900px; }
+  .pros-cons h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+  .pros-cons ul { margin: 0; padding-left: 1.2rem; line-height: 1.7; font-size: 0.92rem; }
+  @media (max-width: 700px) { .pros-cons { grid-template-columns: 1fr; } }
+
+  /* Conclusão */
+  .conclusion-list { padding-left: 1.3rem; max-width: 72ch; line-height: 1.85; font-size: 1rem; }
+
+  /* Referências */
+  .references { list-style: none; padding: 0; margin: 0; max-width: 78ch; }
+  .references li { padding: 0.85rem 0; border-bottom: 1px solid var(--border); font-size: 0.92rem; line-height: 1.6; }
+  .ref-slide { display: block; color: var(--amber); font-size: 0.78rem; margin-bottom: 0.2rem; font-weight: 600; }
+
+  /* Debugger interativo (usado nas demos) */
+  .viz-layout { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 1.2rem; align-items: start; width: 100%; max-width: 1080px; }
+  @media (max-width: 900px) { .viz-layout { grid-template-columns: 1fr; } }
+
+  .viz-panel, .code-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem;
+  }
+
+  .viz-bars { display: flex; align-items: flex-end; gap: 6px; height: 180px; padding: 1.6rem 0.4rem 0; }
+  .viz-bars.as-blocks { align-items: flex-start; height: auto; flex-wrap: wrap; padding-top: 0.4rem; }
+  .viz-cell { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; min-width: 0; }
+  .viz-bars.as-blocks .viz-cell { flex: 0 0 auto; }
+
+  .bar {
+    width: 100%;
+    background: #c7cbd6;
+    border-radius: 4px 4px 2px 2px;
+    position: relative;
+    min-height: 3px;
+    transition: height 0.25s ease, background-color 0.2s ease, transform 0.2s ease;
+  }
+  .bar .value {
+    position: absolute;
+    top: -1.35rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+  .block {
+    width: 42px;
+    height: 42px;
+    background: #9aa1b3;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.88rem;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+  .cell-index { font-size: 0.68rem; color: var(--muted); }
+
+  .bar.pivot, .block.pivot { background: var(--violet); }
+  .bar.compare, .block.compare { background: var(--teal); }
+  .bar.swap, .block.swap { background: var(--rose); transform: translateY(-5px); }
+  .bar.sorted, .block.sorted { background: var(--green); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar, .block { transition: none; }
+  }
+
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1rem 0 0.8rem; font-size: 0.76rem; color: var(--muted); }
+  .chip::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .chip-pivot::before { background: var(--violet); }
+  .chip-compare::before { background: var(--teal); }
+  .chip-swap::before { background: var(--rose); }
+  .chip-sorted::before { background: var(--green); }
+
+  .viz-step-desc { min-height: 2.3em; font-size: 0.9rem; margin: 0.4rem 0 0.8rem; }
+
+  .viz-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  button {
+    background: var(--panel-alt);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--amber); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+
+  .speed, .array-size {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .array-size input[type="number"] {
+    width: 52px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.32rem 0.4rem;
+    font-size: 0.8rem;
+    color: var(--text);
+  }
+  .viz-step-counter { color: var(--muted); font-size: 0.76rem; margin-top: 0.7rem; }
+
+  .code-panel pre { margin: 0; overflow-x: auto; max-height: 42vh; overflow-y: auto; }
+  .code-panel code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.76rem;
+    line-height: 1.65;
+  }
+  .code-line { display: block; padding: 0 0.6rem; border-left: 3px solid transparent; white-space: pre; }
+  .code-line.active { background: rgba(184, 114, 10, 0.1); border-left-color: var(--amber); }
+  .line-num { display: inline-block; width: 2.1em; color: var(--muted); user-select: none; }
+
+  /* Navegação do deck */
+  .deck-nav {
+    position: fixed;
+    bottom: 1.4rem;
+    right: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.4rem 0.7rem;
+    box-shadow: 0 2px 10px rgba(30, 34, 48, 0.08);
+  }
+  .deck-nav button { border-radius: 999px; padding: 0.4rem 0.7rem; }
+  .deck-counter { font-size: 0.76rem; color: var(--muted); min-width: 3.4em; text-align: center; }
+  .deck-hint {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.4rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    z-index: 20;
+  }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <section class="slide slide-cover active" data-slide="1">
+    <p class="cover-kicker">UTFPR</p>
+    <h1 class="cover-title">Quick Sort</h1>
+    <p class="cover-subtitle">Seminário de Algoritmos de Ordenação</p>
+    <dl class="cover-meta">
+      <div><dt>Curso</dt><dd>Análise e Desenvolvimento de Sistemas (ADS)</dd></div>
+      <div><dt>Disciplina</dt><dd>Estratégias de Programação <span class="placeholder"></span></dd></div>
+      <div><dt>Turma</dt><dd>AS64D</dd></div>
+      <div><dt>Professor</dt><dd>Clayton Kossoski</dd></div>
+      <div><dt>Acadêmicos(as)</dt><dd class="placeholder">Arthur Stellato | Conrado Mata | João Melo | Reinan Morais | Luis</dd></div>
+      <div><dt>Data</dt><dd class="placeholder">22/09/2026</dd></div>
+    </dl>
+  </section>
+
+  <section class="slide" data-slide="2">
+    <h2>Agenda</h2>
+    <ol class="agenda">
+      <li>Visão geral do Quick Sort</li>
+      <li>Como funciona</li>
+      <li>Passo a passo (com o código)</li>
+      <li>Exemplo prático</li>
+      <li>Complexidade, vantagens e desvantagens</li>
+      <li>Comparação com outros métodos de ordenação</li>
+      <li>Demonstração ao vivo</li>
+      <li>Conclusão</li>
+      <li>Referências</li>
+    </ol>
+  </section>
+
+  <section class="slide" data-slide="3">
+    <h2>Quick Sort: visão geral</h2>
+    <div class="overview-grid">
+      <div>
+        <h3>O que é</h3>
+        <p>Um algoritmo de ordenação por divisão e conquista: escolhe um pivô, particiona o array em torno dele e repete o processo recursivamente.</p>
+      </div>
+      <div>
+        <h3>Para que serve</h3>
+        <p>Organizar dados de forma eficiente — base para buscas rápidas, processamento de grandes volumes e uso geral em software.</p>
+      </div>
+      <div>
+        <h3>Características principais</h3>
+        <p>In-place, recursivo, não estável, e com complexidade média de O(n log n).</p>
+      </div>
+      <div>
+        <h3>Ideia geral de funcionamento</h3>
+        <p>Pivô → particionamento → recursão nas duas metades, até sobrarem apenas pedaços de um elemento.</p>
+      </div>
+      <div>
+        <h3>Contexto de utilização</h3>
+        <p>Uso geral e datasets grandes; versões otimizadas dele aparecem em bibliotecas padrão de várias linguagens de programação.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-slide="4">
+    <h2>Como funciona</h2>
+    <p>O Quick Sort segue a estratégia de dividir para conquistar: em vez de comparar todos os elementos entre si, ele separa o problema em pedaços cada vez menores.</p>
+    <div class="partition-diagram">
+      <div class="diagram-box diagram-smaller">menores que o pivô</div>
+      <div class="diagram-box diagram-pivot">pivô</div>
+      <div class="diagram-box diagram-bigger">maiores que o pivô</div>
+    </div>
+    <p>Essa mesma divisão se repete, de forma independente, dentro de cada um dos dois grupos — até restarem apenas grupos de 0 ou 1 elemento, que já estão ordenados por definição.</p>
+  </section>
+
+  <section class="slide" data-slide="5">
+    <h2>Passo a passo</h2>
+    <ol class="steps">
+      <li><strong>Escolha do pivô</strong> — esta implementação usa sempre o último elemento da faixa.</li>
+      <li><strong>Particionamento</strong> — percorre a faixa comparando cada elemento com o pivô: os menores vão para a esquerda.</li>
+      <li><strong>Posicionamento do pivô</strong> — ao final, o pivô é movido para a posição que já é definitiva no array ordenado.</li>
+      <li><strong>Recursão</strong> — o mesmo processo se repete, separadamente, à esquerda e à direita do pivô.</li>
+      <li><strong>Caso base</strong> — quando a faixa tem 0 ou 1 elemento, a recursão para.</li>
+    </ol>
+    <div class="code-snippet">
+      <pre><code>int partition(vector&lt;int&gt;&amp; arr, int low, int high) {
+    int pivot = arr[high];
+    int i = low - 1;
+
+    for (int j = low; j &lt; high; j++) {
+        if (arr[j] &lt; pivot) {
+            i++;
+            swap(arr[i], arr[j]);
+        }
+    }
+
+    swap(arr[i + 1], arr[high]);
+    return i + 1;
+}</code></pre>
+      <p class="footnote-ref">Código comentado no mesmo estilo didático usado pelo livro de Backes<sup>1</sup>.</p>
+    </div>
+  </section>
+
+  <section class="slide" data-slide="6">
+    <h2>Exemplo prático</h2>
+    <p>Array inicial: <code>[10, 7, 8, 9, 1, 5]</code></p>
+    <table class="data-table">
+      <thead><tr><th>Chamada</th><th>Pivô</th><th>Array depois</th><th>Pivô fixado no índice</th></tr></thead>
+      <tbody>
+        <tr><td>partition(0, 5)</td><td>5</td><td>[1, 5, 8, 9, 10, 7]</td><td>1</td></tr>
+        <tr><td>partition(2, 5)</td><td>7</td><td>[1, 5, 7, 9, 10, 8]</td><td>2</td></tr>
+        <tr><td>partition(3, 5)</td><td>8</td><td>[1, 5, 7, 8, 10, 9]</td><td>3</td></tr>
+        <tr><td>partition(4, 5)</td><td>9</td><td>[1, 5, 7, 8, 9, 10]</td><td>4</td></tr>
+      </tbody>
+    </table>
+    <p>Resultado final: <code>[1, 5, 7, 8, 9, 10]</code></p>
+  </section>
+
+  <section class="slide" data-slide="7">
+    <h2>Complexidade e desempenho</h2>
+    <div class="metrics">
+      <div class="metric"><span class="metric-label">Melhor caso</span><span class="metric-value">O(n log n)</span></div>
+      <div class="metric"><span class="metric-label">Caso médio</span><span class="metric-value">O(n log n)</span></div>
+      <div class="metric"><span class="metric-label">Pior caso</span><span class="metric-value">O(n²)</span></div>
+      <div class="metric"><span class="metric-label">Espaço extra</span><span class="metric-value">O(log n)</span></div>
+      <div class="metric"><span class="metric-label">Estável</span><span class="metric-value">Não</span></div>
+      <div class="metric"><span class="metric-label">In-place</span><span class="metric-value">Sim</span></div>
+    </div>
+    <div class="pros-cons">
+      <div>
+        <h3>Vantagens</h3>
+        <ul>
+          <li>Rápido na prática para grandes volumes de dados</li>
+          <li>In-place — baixo uso de memória extra</li>
+          <li>Fácil de paralelizar (as duas metades são independentes)</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Desvantagens</h3>
+        <ul>
+          <li>Pior caso O(n²)</li>
+          <li>Não é estável</li>
+          <li>Desempenho depende muito da escolha do pivô</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-slide="8">
+    <h2>Quick Sort vs. Bubble Sort</h2>
+    <p>Os dois são algoritmos de comparação e troca, mas resolvem o problema de formas bem diferentes. O Bubble Sort percorre o array repetidamente, trocando pares adjacentes fora de ordem. O Quick Sort particiona o problema em torno de um pivô e ordena cada metade recursivamente — por isso escala muito melhor conforme o array cresce.</p>
+    <table class="data-table">
+      <thead><tr><th></th><th>Quick Sort</th><th>Bubble Sort</th></tr></thead>
+      <tbody>
+        <tr><td>Estratégia</td><td>Dividir para conquistar, particionando em torno de um pivô</td><td>Trocas sucessivas de elementos adjacentes, em passadas repetidas</td></tr>
+        <tr><td>Melhor caso</td><td>O(n log n)</td><td>O(n), com otimização de parada antecipada</td></tr>
+        <tr><td>Caso médio</td><td>O(n log n)</td><td>O(n²)</td></tr>
+        <tr><td>Pior caso</td><td>O(n²)</td><td>O(n²)</td></tr>
+        <tr><td>Espaço extra</td><td>O(log n) — pilha de recursão</td><td>O(1)</td></tr>
+        <tr><td>Estável</td><td>Não</td><td>Sim</td></tr>
+        <tr><td>Indicado para</td><td>Datasets grandes, uso geral</td><td>Fins didáticos, arrays pequenos ou quase ordenados</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="slide" data-slide="9">
+    <h2>Demonstração ao vivo</h2>
+    <div class="viz" id="viz-a">
+      <div class="viz-layout">
+        <div class="viz-panel">
+          <div class="viz-bars"></div>
+          <div class="legend">
+            <span class="chip chip-pivot">Pivô</span>
+            <span class="chip chip-compare">Comparando</span>
+            <span class="chip chip-swap">Trocando</span>
+            <span class="chip chip-sorted">Posição final</span>
+          </div>
+          <p class="viz-step-desc"></p>
+          <div class="viz-controls">
+            <label class="array-size">Tamanho <input type="number" class="viz-arrsize" min="2" max="15" value="10" /></label>
+            <button type="button" class="viz-random">Gerar aleatório</button>
+            <button type="button" class="viz-best">Melhor caso</button>
+            <button type="button" class="viz-worst">Pior caso</button>
+            <button type="button" class="viz-back">◁ Voltar</button>
+            <button type="button" class="viz-play">▷ Reproduzir</button>
+            <button type="button" class="viz-next">Avançar ▷</button>
+            <label class="speed">Velocidade <input type="range" class="viz-speed" min="1" max="10" value="5" /></label>
+            <button type="button" class="viz-viewmode">Ver como blocos</button>
+          </div>
+          <p class="viz-step-counter"></p>
+        </div>
+        <div class="code-panel">
+          <pre><code class="viz-code"></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-slide="10">
+    <h2>Conclusão</h2>
+    <ul class="conclusion-list">
+      <li><strong>O que é:</strong> um algoritmo de ordenação por divisão e conquista.</li>
+      <li><strong>Como funciona:</strong> escolhe um pivô, particiona o array em torno dele e repete o processo recursivamente.</li>
+      <li><strong>Principais características:</strong> rápido na prática, in-place, mas não estável.</li>
+      <li><strong>Vantagens e limitações:</strong> ótimo desempenho médio (O(n log n)), mas pior caso O(n²) quando o pivô é mal escolhido.</li>
+      <li><strong>Considerações finais:</strong> por isso, implementações usadas de verdade combinam o Quick Sort com outras estratégias — pivô aleatório, mediana de três, ou até outros algoritmos como reforço.</li>
+    </ul>
+  </section>
+
+  <section class="slide" data-slide="11">
+    <h2>Referências</h2>
+    <ul class="references">
+      <li>
+        <span class="ref-slide">Slide 5 — Passo a passo</span>
+        BACKES, André Ricardo. <em>Algoritmos e estruturas de dados em linguagem C</em>. Rio de Janeiro: LTC, 2022.
+      </li>
+      <li>
+        <span class="ref-slide">Slide 9 — Demonstração ao vivo</span>
+        SORTING VISUALIZER. <em>Quick Sort</em>. Disponível em: https://sortvisualizer.com/quicksort/. Acesso em: 09 set. 2026. <span class="placeholder">(ajustar para a data em que revisarem)</span>
+      </li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="deck-nav">
+  <button id="btnPrevSlide" type="button" aria-label="Slide anterior">◁</button>
+  <span id="deckCounter" class="deck-counter">1 / 12</span>
+  <button id="btnNextSlide" type="button" aria-label="Próximo slide">▷</button>
+</div>
+<p class="deck-hint">Use as setas ← → do teclado para navegar</p>
+
+<script>
+  const CPP_SOURCE = `#include <iostream>
+#include <vector>
+using namespace std;
+
+// Função de partição (esquema de Lomuto): reorganiza o vetor
+// usando o último elemento como pivô e devolve sua posição final.
+int partition(vector<int>& arr, int low, int high) {
+    int pivot = arr[high];
+    int i = low - 1;
+
+    for (int j = low; j < high; j++) {
+        if (arr[j] < pivot) {
+            i++;
+            swap(arr[i], arr[j]);
+        }
+    }
+
+    swap(arr[i + 1], arr[high]);
+    return i + 1;
+}
+
+// Função recursiva que ordena o vetor entre os índices low e high.
+void quickSort(vector<int>& arr, int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
+}
+
+int main() {
+    vector<int> arr = {10, 7, 8, 9, 1, 5};
+    int n = arr.size();
+
+    quickSort(arr, 0, n - 1);
+
+    cout << "Array ordenado: ";
+    for (int x : arr) cout << x << " ";
+    cout << endl;
+
+    return 0;
+}`;
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // Gera a lista de passos executando o mesmo algoritmo do C++,
+  // guardando em cada passo qual linha do código corresponde.
+  function buildSteps(initialArray) {
+    const steps = [];
+    const arr = initialArray.slice();
+    const sortedSet = new Set();
+
+    function snapshot(extra) {
+      steps.push(Object.assign({ array: arr.slice(), sortedIndices: Array.from(sortedSet) }, extra));
+    }
+
+    function partition(low, high) {
+      const pivot = arr[high];
+      snapshot({ line: 8, low, high, pivotIdx: high, desc: `Pivô escolhido: arr[${high}] = ${pivot}` });
+      let i = low - 1;
+      snapshot({ line: 9, low, high, pivotIdx: high, desc: `i inicializado em ${i} (uma posição antes do início da faixa)` });
+
+      for (let j = low; j < high; j++) {
+        snapshot({ line: 11, low, high, pivotIdx: high, compareIdx: [j], desc: `Avançando j para o índice ${j}` });
+        const cond = arr[j] < pivot;
+        snapshot({ line: 12, low, high, pivotIdx: high, compareIdx: [j, high], desc: `arr[${j}] = ${arr[j]} ${cond ? "<" : "≥"} pivô (${pivot})` });
+        if (cond) {
+          i++;
+          snapshot({ line: 13, low, high, pivotIdx: high, compareIdx: [j], desc: `Condição verdadeira → i++ (i = ${i})` });
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+          snapshot({ line: 14, low, high, pivotIdx: high, swapIdx: [i, j], desc: `Troca arr[${i}] ↔ arr[${j}]` });
+        }
+      }
+
+      [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+      snapshot({ line: 18, low, high, swapIdx: [i + 1, high], desc: `Pivô movido para sua posição final: índice ${i + 1}` });
+      sortedSet.add(i + 1);
+      snapshot({ line: 19, low, high, pivotIdx: i + 1, desc: `Partição concluída — pivô fixo no índice ${i + 1}` });
+      return i + 1;
+    }
+
+    function quickSort(low, high) {
+      snapshot({ line: 24, low, high, desc: `quickSort(low=${low}, high=${high})` });
+      if (low < high) {
+        const pi = partition(low, high);
+        snapshot({ line: 25, low, high, desc: `Partição retornou pi = ${pi}` });
+        snapshot({ line: 26, low, high, desc: `Chamada recursiva à esquerda: quickSort(${low}, ${pi - 1})` });
+        quickSort(low, pi - 1);
+        snapshot({ line: 27, low, high, desc: `Chamada recursiva à direita: quickSort(${pi + 1}, ${high})` });
+        quickSort(pi + 1, high);
+      } else if (low === high && low >= 0 && low < arr.length) {
+        sortedSet.add(low);
+        snapshot({ line: 24, low, high, desc: `Faixa de 1 elemento (índice ${low}) — condição falsa, caso base` });
+      }
+    }
+
+    snapshot({ line: null, desc: "Array inicial. Clique em reproduzir ou avance passo a passo." });
+    quickSort(0, arr.length - 1);
+    snapshot({ line: null, desc: "Array totalmente ordenado!" });
+    return steps;
+  }
+
+  // Gera n valores inteiros distintos, num intervalo fixo, em ordem aleatória.
+  function distinctRandomValues(n) {
+    const pool = [];
+    for (let v = 5; v <= 99; v++) pool.push(v);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, n);
+  }
+
+  // Array já ordenado (ascendente): pior caso para esta implementação,
+  // já que o pivô é sempre o último elemento (o maior da faixa).
+  function worstCaseArray(n) {
+    return distinctRandomValues(n).sort((a, b) => a - b);
+  }
+
+  // Constrói um array em que o pivô (último elemento de cada faixa) é
+  // sempre a mediana dos valores daquela faixa, garantindo partições
+  // equilibradas em cada chamada — o melhor caso possível, O(n log n).
+  function bestCaseArray(n) {
+    const values = distinctRandomValues(n).sort((a, b) => a - b);
+    function build(vals) {
+      if (vals.length === 0) return [];
+      const medianIdx = Math.floor((vals.length - 1) / 2);
+      const median = vals[medianIdx];
+      const left = vals.slice(0, medianIdx);
+      const right = vals.slice(medianIdx + 1);
+      return [...build(left), ...build(right), median];
+    }
+    return build(values);
+  }
+
+  // Cria um debugger/visualizador independente dentro do elemento `root`.
+  function initVisualizer(root) {
+    const barsEl = root.querySelector(".viz-bars");
+    const stepDescEl = root.querySelector(".viz-step-desc");
+    const stepCounterEl = root.querySelector(".viz-step-counter");
+    const btnBack = root.querySelector(".viz-back");
+    const btnNext = root.querySelector(".viz-next");
+    const btnPlay = root.querySelector(".viz-play");
+    const speedInput = root.querySelector(".viz-speed");
+    const codeBlock = root.querySelector(".viz-code");
+    const btnViewMode = root.querySelector(".viz-viewmode");
+    const arrSizeInput = root.querySelector(".viz-arrsize");
+    const btnRandom = root.querySelector(".viz-random");
+    const btnBest = root.querySelector(".viz-best");
+    const btnWorst = root.querySelector(".viz-worst");
+
+    let steps = [];
+    let currentStep = 0;
+    let playing = false;
+    let timer = null;
+    let viewMode = "bars";
+
+    function renderCode() {
+      const lines = CPP_SOURCE.split("\n");
+      codeBlock.innerHTML = lines
+        .map((line, idx) => {
+          const n = idx + 1;
+          return `<span class="code-line" data-line="${n}"><span class="line-num">${n}</span>${escapeHtml(line)}</span>`;
+        })
+        .join("\n");
+    }
+
+    function render(idx) {
+      const step = steps[idx];
+      const maxVal = Math.max(...step.array, 1);
+
+      barsEl.innerHTML = "";
+      barsEl.classList.toggle("as-blocks", viewMode === "blocks");
+
+      step.array.forEach((val, i) => {
+        const cell = document.createElement("div");
+        cell.className = "viz-cell";
+
+        const el = document.createElement("div");
+        el.className = viewMode === "blocks" ? "block" : "bar";
+        if (step.sortedIndices && step.sortedIndices.includes(i)) el.classList.add("sorted");
+        if (step.pivotIdx === i) el.classList.add("pivot");
+        if (step.compareIdx && step.compareIdx.includes(i)) el.classList.add("compare");
+        if (step.swapIdx && step.swapIdx.includes(i)) el.classList.add("swap");
+
+        if (viewMode === "bars") {
+          el.style.height = `${(val / maxVal) * 100}%`;
+          const label = document.createElement("span");
+          label.className = "value";
+          label.textContent = val;
+          el.appendChild(label);
+        } else {
+          el.textContent = val;
+        }
+
+        cell.appendChild(el);
+
+        if (viewMode === "blocks") {
+          const idxLabel = document.createElement("span");
+          idxLabel.className = "cell-index";
+          idxLabel.textContent = i;
+          cell.appendChild(idxLabel);
+        }
+
+        barsEl.appendChild(cell);
+      });
+
+      root.querySelectorAll(".code-line.active").forEach((el) => el.classList.remove("active"));
+      if (step.line) {
+        const lineEl = root.querySelector(`.code-line[data-line="${step.line}"]`);
+        if (lineEl) {
+          lineEl.classList.add("active");
+          lineEl.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+      }
+
+      stepDescEl.textContent = step.desc;
+      stepCounterEl.textContent = `Passo ${idx + 1} / ${steps.length}`;
+      btnBack.disabled = idx === 0;
+      btnNext.disabled = idx === steps.length - 1;
+    }
+
+    function goTo(idx) {
+      currentStep = Math.max(0, Math.min(steps.length - 1, idx));
+      render(currentStep);
+    }
+
+    function stopPlay() {
+      playing = false;
+      btnPlay.textContent = "▷ Reproduzir";
+      clearInterval(timer);
+    }
+
+    function startPlay() {
+      if (currentStep >= steps.length - 1) currentStep = 0;
+      playing = true;
+      btnPlay.textContent = "❚❚ Pausar";
+      const delay = 1100 - Number(speedInput.value) * 100;
+      timer = setInterval(() => {
+        if (currentStep >= steps.length - 1) {
+          stopPlay();
+          return;
+        }
+        goTo(currentStep + 1);
+      }, delay);
+    }
+
+    function loadArray(arr) {
+      stopPlay();
+      steps = buildSteps(arr);
+      currentStep = 0;
+      render(0);
+    }
+
+    function randomArray(size) {
+      let n = parseInt(size, 10);
+      if (!Number.isInteger(n)) n = 10;
+      n = Math.max(2, Math.min(15, n));
+      return Array.from({ length: n }, () => 5 + Math.floor(Math.random() * 90));
+    }
+
+    function currentSize() {
+      let n = parseInt(arrSizeInput ? arrSizeInput.value : 10, 10);
+      if (!Number.isInteger(n)) n = 10;
+      n = Math.max(2, Math.min(15, n));
+      if (arrSizeInput) arrSizeInput.value = n;
+      return n;
+    }
+
+    btnNext.addEventListener("click", () => { stopPlay(); goTo(currentStep + 1); });
+    btnBack.addEventListener("click", () => { stopPlay(); goTo(currentStep - 1); });
+    btnPlay.addEventListener("click", () => (playing ? stopPlay() : startPlay()));
+    speedInput.addEventListener("input", () => { if (playing) { stopPlay(); startPlay(); } });
+
+    if (btnViewMode) {
+      btnViewMode.addEventListener("click", () => {
+        viewMode = viewMode === "bars" ? "blocks" : "bars";
+        btnViewMode.textContent = viewMode === "bars" ? "Ver como blocos" : "Ver como barras";
+        render(currentStep);
+      });
+    }
+
+    if (btnRandom) {
+      btnRandom.addEventListener("click", () => {
+        loadArray(randomArray(currentSize()));
+      });
+    }
+
+    if (btnBest) {
+      btnBest.addEventListener("click", () => {
+        loadArray(bestCaseArray(currentSize()));
+      });
+    }
+
+    if (btnWorst) {
+      btnWorst.addEventListener("click", () => {
+        loadArray(worstCaseArray(currentSize()));
+      });
+    }
+
+    renderCode();
+    loadArray(randomArray(arrSizeInput ? arrSizeInput.value : 10));
+
+    return { stopPlay };
+  }
+
+  const vizInstances = [
+    initVisualizer(document.getElementById("viz-a")),
+  ];
+
+  // --- Navegação entre slides ---
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  let currentSlide = 0;
+  const counterEl = document.getElementById("deckCounter");
+  const btnPrevSlide = document.getElementById("btnPrevSlide");
+  const btnNextSlide = document.getElementById("btnNextSlide");
+
+  function showSlide(idx) {
+    currentSlide = Math.max(0, Math.min(slides.length - 1, idx));
+    slides.forEach((s, i) => s.classList.toggle("active", i === currentSlide));
+    counterEl.textContent = `${currentSlide + 1} / ${slides.length}`;
+    btnPrevSlide.disabled = currentSlide === 0;
+    btnNextSlide.disabled = currentSlide === slides.length - 1;
+    vizInstances.forEach((inst) => inst.stopPlay());
+  }
+
+  btnPrevSlide.addEventListener("click", () => showSlide(currentSlide - 1));
+  btnNextSlide.addEventListener("click", () => showSlide(currentSlide + 1));
+
+  window.addEventListener("keydown", (e) => {
+    const tag = e.target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === "PageDown") {
+      e.preventDefault();
+      showSlide(currentSlide + 1);
+    }
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp" || e.key === "PageUp") {
+      e.preventDefault();
+      showSlide(currentSlide - 1);
+    }
+    if (e.key === "Home") { e.preventDefault(); showSlide(0); }
+    if (e.key === "End") { e.preventDefault(); showSlide(slides.length - 1); }
+  });
+
+  showSlide(0);
+</script>
+</body>
+</html>
